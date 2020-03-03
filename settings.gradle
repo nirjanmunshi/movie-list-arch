@@ -1,0 +1,2 @@
+rootProject.name='MovieListArch'
+include ':app'
