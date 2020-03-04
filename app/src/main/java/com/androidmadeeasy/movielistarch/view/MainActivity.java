@@ -4,6 +4,7 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -11,17 +12,10 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.androidmadeeasy.movielistarch.R;
 import com.androidmadeeasy.movielistarch.adapter.MovieAdapter;
-import com.androidmadeeasy.movielistarch.api.MovieApi;
-import com.androidmadeeasy.movielistarch.api.RetrofitInstance;
 import com.androidmadeeasy.movielistarch.model.Movie;
-import com.androidmadeeasy.movielistarch.model.MovieDbResponse;
+import com.androidmadeeasy.movielistarch.viewmodel.MainActivityViewModel;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -30,40 +24,30 @@ public class MainActivity extends AppCompatActivity {
     private MovieAdapter movieAdapter;
     private SwipeRefreshLayout swipeRefreshLayout;
 
+    private MainActivityViewModel mainActivityViewModel;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mainActivityViewModel = new ViewModelProvider(this).get(MainActivityViewModel.class);
+
         swipeRefreshLayout = findViewById(R.id.swipe_layout);
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
         swipeRefreshLayout.setOnRefreshListener(() -> getPopularMovies());
 
-        setTitle("TMDB Popular Movies Today");
+        setTitle("Popular Movies Today");
+
 
         getPopularMovies();
     }
 
     public void getPopularMovies() {
-        MovieApi api = RetrofitInstance.getApi();
-        Call<MovieDbResponse> call = api.getPopularMovies(this.getString(R.string.api_key));
-
-        call.enqueue(new Callback<MovieDbResponse>() {
-            @Override
-            public void onResponse(Call<MovieDbResponse> call, Response<MovieDbResponse> response) {
-                MovieDbResponse movieDBResponse = response.body();
-                if (movieDBResponse != null && movieDBResponse.getMovies() != null) {
-                    movies = movieDBResponse.getMovies();
-                    showOnRecyclerView();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<MovieDbResponse> call, Throwable t) {
-
-            }
+        mainActivityViewModel.getMovieList().observe(this, movieList -> {
+            movies = movieList;
+            showOnRecyclerView();
         });
-
     }
 
     private void showOnRecyclerView() {
@@ -77,6 +61,5 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         recyclerView.setAdapter(movieAdapter);
         movieAdapter.notifyDataSetChanged();
-
     }
 }
